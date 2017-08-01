@@ -1,6 +1,6 @@
 import argparse
 
-from .db import PostgresProvider
+from .db import ProviderFactory, NullProvider
 from .definition import DefinitionFileReader, DefinitionBuilder
 from .execution import ExecutionPlanner
 
@@ -49,7 +49,7 @@ class CLI(object):
         return parser
 
     def _action_run(self, db, definition, options):
-        execution_planner=ExecutionPlanner()
+        execution_planner = ExecutionPlanner()
 
         execution_plan = execution_planner.create(definition)
 
@@ -59,19 +59,19 @@ class CLI(object):
             execution_plan.run(db)
 
     def run(self):
-        options={}
+        db = None
+        options = {}
 
         args = self.parser.parse_args()
 
-        host, username, password, dbname = args.database.split(';')
-        db=PostgresProvider(host, username, password, dbname)
+        definition_reader = DefinitionFileReader()
+        definition = definition_reader.read(args.filepath)
+
+        provider_factory = ProviderFactory()
+        db = provider_factory.create(args.database)
 
         with db:
-            definition_reader = DefinitionFileReader()
-            definition = definition_reader.read(args.filepath)
-
-            db_tables = db.get_tables()
-            definition_builder = DefinitionBuilder(db_tables)
+            definition_builder = DefinitionBuilder(db)
             definition = definition_builder.build(definition)
 
             if args.exclude:
@@ -83,3 +83,6 @@ class CLI(object):
             options['explain'] = bool(args.explain)
 
             self._action_run(db, definition, options)
+
+def main():
+    CLI().run()

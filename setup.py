@@ -46,7 +46,7 @@ setup(
     },
 
     # Package dependencies.
-    install_requires = ['pyyaml==3.12'],
+    install_requires = ['pyyaml==5.1'],
     extras_require = {
         'test': ['pytest', 'pytest-cov'],
     },
